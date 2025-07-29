@@ -8,6 +8,7 @@ import tensorflow as tf
 from tensorflow import keras
 import numpy as np
 import os, re, json
+from gemini_integration import load_visual_features
 
 divisor = 4;
 
@@ -60,13 +61,17 @@ def step5_load_model(model_file="saved_rhythm_model"):
 
 def step5_load_npz():
     fn = "mapthis.npz";
+    visual_fn = "mapthis_visual.npz"
 
-    return read_npz(fn);
+    return read_npz(fn), visual_fn
 
 def step5_predict_notes(model, npz, params):
 
     # Get npz data
-    test_data, div_data, ticks, timestamps = npz;
+    (test_data, div_data, ticks, timestamps), visual_fn = npz;
+    visual_features = None
+    if os.path.exists(visual_fn):
+        visual_features = load_visual_features(visual_fn)
 
     dist_multiplier, note_density, slider_favor, divisor_favor, slider_max_ticks = params;
 
@@ -78,7 +83,11 @@ def step5_predict_notes(model, npz, params):
     test_data2 = np.reshape(test_data, (-1, time_interval, test_data.shape[1], test_data.shape[2], test_data.shape[3]))
     div_data2 = np.reshape(div_data, (-1, time_interval, div_data.shape[1]))
 
-    test_predictions = model.predict([test_data2, div_data2]);
+    if visual_features is not None:
+        visual_features2 = np.reshape(visual_features, (-1, time_interval, visual_features.shape[1]))
+        test_predictions = model.predict([test_data2, div_data2, visual_features2]);
+    else:
+        test_predictions = model.predict([test_data2, div_data2]);
     preds = test_predictions.reshape(-1, test_predictions.shape[2]);
 
     # Favor sliders a little

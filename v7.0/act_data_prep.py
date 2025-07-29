@@ -6,6 +6,7 @@
 
 from audio_tools import *;
 from os_tools import *;
+from gemini_integration import extract_and_save_visual_features;
 
 import os, re, time;
 
@@ -50,6 +51,9 @@ def step1_load_maps():
         try:
             start = time.time()
             read_and_save_osu_file(mname.strip(), filename=os.path.join(mapdata_path, str(k)), divisor=divisor);
+            video_path = mname.strip().replace(".osu", ".mp4")
+            if os.path.exists(video_path):
+                extract_and_save_visual_features(video_path, os.path.join(mapdata_path, str(k) + "_visual.npz"))
             end = time.time()
             print("Map data #" + str(k) + " saved! time = " + str(end - start) + " secs");
         except Exception as e:
